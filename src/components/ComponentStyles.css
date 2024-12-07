@@ -1,0 +1,102 @@
+/* General container styles */
+.generator-section {
+    margin-bottom: 3rem;
+    padding: 2rem;
+    background: white;
+    border-radius: 1rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.flowchart-section {
+    padding: 2rem;
+    background: white;
+    border-radius: 1rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Input styles */
+.input-area {
+    margin-bottom: 1.5rem;
+}
+
+.input-area textarea {
+    width: 100%;
+    min-height: 120px;
+    padding: 1rem;
+    border: 2px solid #e5e7eb;
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    resize: vertical;
+    transition: border-color 0.2s;
+}
+
+.input-area textarea:focus {
+    border-color: #3b82f6;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Button styles */
+.action-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem 1.5rem;
+    background-color: #3b82f6;
+    color: white;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.action-button:hover {
+    background-color: #2563eb;
+    transform: translateY(-1px);
+}
+
+.action-button:disabled {
+    background-color: #9ca3af;
+    cursor: not-allowed;
+}
+
+/* Preview area */
+.preview-area {
+    margin-top: 2rem;
+    padding: 1.5rem;
+    border: 2px solid #e5e7eb;
+    border-radius: 0.5rem;
+    background-color: #f8fafc;
+}
+
+/* Loading animation */
+.loading {
+    display: inline-block;
+    margin-left: 0.5rem;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Error message */
+.error {
+    color: #dc2626;
+    margin-top: 0.5rem;
+    font-size: 0.875rem;
+}
+
+/* Section headers */
+.section-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 1.5rem;
+}
+
+/* Button group */
+.button-group {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+}
