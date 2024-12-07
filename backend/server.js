@@ -1,7 +1,8 @@
 const express = require("express");
 const cors = require('cors');
+const util = require('util');  // Add this line at the top
 const fs = require("fs").promises;
-const { exec } = require("child_process");
+const exec = util.promisify(require('child_process').exec);
 const { promisify } = require("util");
 const execAsync = promisify(exec);
 const path = require("path");
@@ -44,47 +45,50 @@ ${tikzCode}
 \\end{document}
 `;
 
-app.post("/render-tikz", async (req, res) => {
-  const { tikzCode } = req.body;
-  if (!tikzCode) {
-    return res.status(400).send("TikZ code is required");
-  }
-
-  let tmpDir = null;
-  try {
-    // Create temporary LaTeX file
-    const latex = tikzTemplate(tikzCode);
-    const { fileName: texFile, tmpDir: tempDir } = await createTempFile(latex, 'tex');
-    tmpDir = tempDir;
-
-    // Compile LaTeX to PDF
-    const pdfFile = texFile.replace('.tex', '.pdf');
-    const { stdout, stderr } = await execAsync(`cd ${tmpDir} && pdflatex -interaction=nonstopmode -halt-on-error diagram.tex`);
+app.post('/render-tikz', async (req, res) => {
+    const { tikzCode } = req.body;
+    const tmpDir = path.join(__dirname, 'tmp');
+    const timestamp = Date.now();
+    const texFile = path.join(tmpDir, `diagram-${timestamp}.tex`);
     
-    if (stderr) {
-      console.error('LaTeX compilation error:', stderr);
-      throw new Error(`LaTeX compilation failed: ${stderr}`);
+    try {
+        // Ensure tmp directory exists
+        await fs.mkdir(tmpDir, { recursive: true });
+        
+        // Write the TEX file
+        await fs.writeFile(texFile, tikzCode, 'utf8');
+        
+        // Run pdflatex
+        const { stdout, stderr } = await exec(
+            `pdflatex -interaction=nonstopmode -halt-on-error -output-directory="${tmpDir}" "${texFile}"`,
+            { cwd: tmpDir }
+        );
+
+        // Get the PDF file path
+        const pdfFile = texFile.replace('.tex', '.pdf');
+        
+        // Convert PDF to SVG
+        const svgFile = texFile.replace('.tex', '.svg');
+        await exec(`pdf2svg "${pdfFile}" "${svgFile}"`);
+        
+        // Read the SVG file
+        const svgContent = await fs.readFile(svgFile, 'utf8');
+        
+        // Clean up temporary files
+        await Promise.all([
+            fs.unlink(texFile),
+            fs.unlink(pdfFile),
+            fs.unlink(svgFile),
+            fs.unlink(texFile.replace('.tex', '.aux')),
+            fs.unlink(texFile.replace('.tex', '.log'))
+        ].map(p => p.catch(() => {})));  // Ignore errors in cleanup
+
+        res.send(svgContent);
+        
+    } catch (error) {
+        console.error('Error processing TikZ:', error);
+        res.status(500).send(`Error processing TikZ: ${error.message}`);
     }
-
-    // Convert PDF to SVG
-    const svgFile = texFile.replace('.tex', '.svg');
-    await execAsync(`pdf2svg ${pdfFile} ${svgFile}`);
-
-    // Read the SVG file
-    const svgContent = await fs.readFile(svgFile, 'utf8');
-    res.send(svgContent);
-
-  } catch (error) {
-    console.error('Error processing TikZ:', error);
-    const errorMessage = error.message.includes('LaTeX compilation failed') 
-      ? error.message 
-      : 'Error rendering TikZ diagram: ' + error.message;
-    res.status(500).send(errorMessage);
-  } finally {
-    if (tmpDir) {
-      await cleanupFiles(tmpDir);
-    }
-  }
 });
 
 // Validate OpenAI API key
